@@ -58,4 +58,4 @@ Branches
 [appv-url]:		https://ci.appveyor.com/project/chrisstone/aesstring
 [psg-v-img]:	https://img.shields.io/powershellgallery/v/AesString.svg
 [psg-dt-img]:	https://img.shields.io/powershellgallery/dt/AesString.svg
-[psg-url]:		https://powershellgallery.com/
+[psg-url]:		https://www.powershellgallery.com/packages/AesString
