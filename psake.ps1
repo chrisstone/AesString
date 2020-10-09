@@ -20,7 +20,7 @@ Properties {
 
 TaskSetup {
 
-	Write-Output "Task $TaskName ".PadRight(70,'-')
+	Write-Output "".PadRight(70,'-')
 
 }
 
@@ -48,7 +48,7 @@ Task Test -depends Init  {
 		}
 		TestResult = @{
 			Enabled = $true
-			OutputPath = ("TestResult_{0}.xml" -f $TimeStamp)
+			OutputPath = ("{0}\TestResult_{1}.xml" -f $ProjectRoot, $TimeStamp)
 			OutputFormat = "NUnitXml"
 		}
 	}
