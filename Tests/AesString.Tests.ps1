@@ -1,4 +1,4 @@
-#### By Chris Stone <chris.stone@nuwavepartners.com> v0.0.1 2020-10-08
+#### By Chris Stone <chris.stone@nuwavepartners.com>
 
 
 $Module = Get-ChildItem -Filter "*.psm1" -Path (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)) -Recurse -Depth 1
