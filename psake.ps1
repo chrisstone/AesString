@@ -1,43 +1,46 @@
-#### By Chris Stone <chris.stone@nuwavepartners.com> v0.0.9 2020-06-12T14:16:25.480Z
+#### By Chris Stone <chris.stone@nuwavepartners.com>
 # PSake makes variables declared here available in other scriptblocks
 # Init some things
 Properties {
+
+	$TimeStamp = (Get-Date).ToUniversalTime() | Get-Date -UFormat "%Y%m%d-%H%M%SZ"
+
 	# Find the build folder based on build system
 	$ProjectRoot = $ENV:BHProjectPath
 	If (-not $ProjectRoot) {
 		$ProjectRoot = Resolve-Path "$PSScriptRoot\.."
 	}
 
-	$Timestamp = (Get-Date).ToUniversalTime() | Get-Date -f 's'
-	$PSVersion = $PSVersionTable.PSVersion.Major
-	$TestFile = "TestResults_PS$PSVersion`_$TimeStamp.xml"
-	$lines = '----------------------------------------------------------------------'
-
 	$Verbose = @{}
 	If ($ENV:BHCommitMessage -match "!verbose") {
 		$Verbose = @{ Verbose = $True }
 	}
+
+}
+
+TaskSetup {
+
+	Write-Output "Task $TaskName ".PadRight(70,'-')
+
 }
 
 Task Default -depends Test
 
 Task Init {
-	$lines
+
 	Set-Location $ProjectRoot
 	"Build System Details:"
 	Get-Item ENV:BH*
-	"`n"
+
 }
 
 Task Test -depends Init  {
-	$lines
-	"`n`tSTATUS: Testing with PowerShell $PSVersion"
 
 	# Testing links on github requires >= tls 1.2
 	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 	# Gather test results. Store them in a variable and file
 	Import-Module Pester
-
 	$PesterConf = [PesterConfiguration]@{
 		Run = @{
 			Path = "$ProjectRoot\Tests"
@@ -45,7 +48,7 @@ Task Test -depends Init  {
 		}
 		TestResult = @{
 			Enabled = $true
-			OutputPath = "$ProjectRoot\$TestFile"
+			OutputPath = ("TestResult_{0}.xml" -f $TimeStamp)
 			OutputFormat = "NUnitXml"
 		}
 	}
@@ -55,37 +58,39 @@ Task Test -depends Init  {
 	If ($ENV:BHBuildSystem -eq 'AppVeyor') {
 		(New-Object 'System.Net.WebClient').UploadFile(
 			"https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)",
-			"$ProjectRoot\$TestFile" )
+			$PesterConf.TestResult.OutputPath.Value )
 	}
-	Remove-Item "$ProjectRoot\$TestFile" -Force -ErrorAction SilentlyContinue
+
+	# Cleanup
+	Remove-Item -Path $PesterConf.TestResult.OutputPath.Value -Force -ErrorAction SilentlyContinue
 
 	# Failed tests?
 	# Need to tell psake or it will proceed to the deployment. Danger!
 	If ($TestResults.FailedCount -gt 0) {
 		Write-Error "Failed '$($TestResults.FailedCount)' tests, build failed"
 	}
-	"`n"
+
 }
 
 Task Build -depends Test {
-	$lines
 
 	Write-Output "Updating Module Manifest:"
+
 	# Load, read, update the psd1 FunctionsToExport, AliasesToExport; from BuildHelpers
 	Write-Output "`Functions"
 	Set-ModuleFunction
-
 	Write-Output "`Aliases"
 	Set-ModuleAlias
 
-	Write-Output "`tPrerelease Metadata"
 	# Set the Prerelease string, or remove
+	Write-Output "`tPrerelease Metadata"
 	If ($env:BHBranchName -eq 'master') {
 		Set-Content -Path $env:BHPSModuleManifest -Value (Get-Content -Path $env:BHPSModuleManifest | Select-String -Pattern 'Prerelease' -NotMatch)
 	} else {
 		Update-Metadata -Path $env:BHPSModuleManifest -PropertyName Prerelease -Value "PRE$(($env:BHCommitHash).Substring(0,7))"
 	}
 
+	# Set build number in manifest
 	Write-Output "`tVersion Build"
 	[Version] $Ver = Get-Metadata -Path $env:BHPSModuleManifest -PropertyName 'ModuleVersion'
 	Update-Metadata -Path $env:BHPSModuleManifest -PropertyName 'ModuleVersion' -Value (@($Ver.Major,$Ver.Minor,$Env:BHBuildNumber) -join '.')
@@ -93,7 +98,6 @@ Task Build -depends Test {
 }
 
 Task Deploy -depends Build {
-	$lines
 
 	$Params = @{
 		Path = "$ProjectRoot"
@@ -102,4 +106,5 @@ Task Deploy -depends Build {
 	}
 	Write-Output "Invoking PSDeploy"
 	Invoke-PSDeploy @Verbose @Params
+
 }

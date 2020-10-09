@@ -34,6 +34,8 @@ function Resolve-Module {
 	}
 }
 
+Write-Output ("`n{0} started " -f $MyInvocation.MyCommand.Name ).PadRight(70,'-')
+
 # Grab nuget bits, PSGallery, install modules
 Get-PackageProvider -Name NuGet -ForceBootstrap | Out-Null
 If ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted') { Set-PSRepository -Name PSGallery -InstallationPolicy Trusted }
