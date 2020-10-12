@@ -5,7 +5,6 @@
 [![PSG Version][psg-v-img]][psg-url]
 [![PSG Downloads][psg-dt-img]][psg-url]
 
-
 ## Installation
 
 ```powershell
@@ -13,7 +12,6 @@ Install-Module -Name AesString
 ```
 
 Use `-AllowPrerelease` to install 'devel' versions (expect bugs).
-
 
 ## Quick Start
 
@@ -29,6 +27,8 @@ Use ECC Key-pairs to derive a shared key for AES
 
 ```powershell
 ## Alice needs to publish a Public Key
+Import-Module -Name AesString
+
 # Creation parameter to allow Exporting
 $keyParam = New-Object System.Security.Cryptography.CngKeyCreationParameters
 $keyParam.ExportPolicy  = [System.Security.Cryptography.CngExportPolicies]::AllowPlaintextExport
@@ -43,6 +43,8 @@ $alicePublic = [System.Convert]::ToBase64String($aliceKey.Export([System.Securit
 #--------------------------------------------------------------------
 
 ## Bob sends
+Import-Module -Name AesString
+
 # Open the Alice key from the Base64-Encoded Public Key
 $aliceKey = [System.Security.Cryptography.CngKey]::Import([System.Convert]::FromBase64String($alicePublic), [System.Security.Cryptography.CngKeyBlobFormat]::EccPublicBlob)
 
@@ -92,11 +94,9 @@ Write-Output $decryptedMessage
 * 0.1.x
     * Work in Progress - Keep your expectations low, very low
 
-
 ## Documentation
 
 TODO Documentation
-
 
 ## Contributing
 
